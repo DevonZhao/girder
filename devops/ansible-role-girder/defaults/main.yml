@@ -1,0 +1,7 @@
+---
+girder_package: "girder"
+girder_pip_extra_args: ""
+girder_web: true
+girder_start: true
+girder_daemonize: true
+girder_enabled: true
