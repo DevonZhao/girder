@@ -1,0 +1,30 @@
+---
+- hosts: all
+
+  pre_tasks:
+    - name: Update package cache
+      apt:
+        update_cache: true
+      become: true
+      become_user: root
+
+    - name: Add GPG Key for MongoDB
+      apt_key:
+        keyserver: keyserver.ubuntu.com
+        id: 9DA31620334BD75D9DCB49F368818C72E52529D4
+      become: true
+
+    - name: Add Repository for MongoDB 3.4
+      apt_repository:
+        repo: "deb [ arch=amd64 ] https://repo.mongodb.org/apt/ubuntu trusty/mongodb-org/3.4 multiverse"
+        state: present
+      become: true
+
+    - name: Install MongoDB 3.4
+      apt:
+        name: "mongodb-org"
+        update_cache: true
+      become: true
+
+  roles:
+    - role: ansible-role-girder

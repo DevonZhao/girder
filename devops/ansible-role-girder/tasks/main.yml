@@ -32,7 +32,7 @@
   pip:
     name: "{{ girder_package }}"
     version: "{{ girder_version|default(omit) }}"
-    extra_args: "--pre {{ girder_pip_extra_args }}"  # TODO Remove when Girder3 is released
+    extra_args: "{{ girder_pip_extra_args }}"
     virtualenv: "{{ girder_virtualenv }}"
   notify:
     - Build Girder web assets

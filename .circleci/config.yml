@@ -6,7 +6,7 @@ jobs:
       # This image uses the oldest version of many dependencies
       - image: girder/girder_test:latest-py2
       # Use the oldest supported MongoDB
-      - image: circleci/mongo:3.2-ram
+      - image: circleci/mongo:3.4-ram
         # The "ephemeralForTest" storage engine https://docs.mongodb.com/v3.2/release-notes/3.2/#ephemeralfortest-storage-engine
         # is likely a free (and poorly documented) analogue to the enterprise-only "inMemory"
         # storage engine. We can pass alternate options to "mongod" by overwriting the default "CMD"
@@ -244,26 +244,34 @@ jobs:
           name: allow boto to work with python 3
           command: sudo rm --force /etc/boto.cfg
       - run:
+          name: Set up virtualenv
+          command: |
+             pip install virtualenv
+             virtualenv /home/circleci/.virtualenvs/girder
+      - run:
+          name: Install pip
+          command: pip install --upgrade pip
+      - run:
           name: Install ansible
           command: pip install ansible
       - run:
-          name: Install Galaxy requirements
-          command: ansible-galaxy install --role-file=girder/devops/ansible/examples/girder-dev-environment/requirements.yml
-          environment:
-            # Include paths for local "girder" role and external roles required by playbook
-            ANSIBLE_ROLES_PATH: girder/devops/ansible/roles:girder/devops/ansible/examples/girder-dev-environment/roles
-      - run:
           name: Install Girder via ansible
-          command: pyenv exec ansible-playbook --inventory-file="localhost," --connection=local girder/devops/ansible/examples/girder-dev-environment/site.yml --extra-vars="{'girder_version':'$CIRCLE_BRANCH', 'girder_repo':'$CIRCLE_REPOSITORY_URL', 'girder_path':'$CIRCLE_WORKING_DIRECTORY/girder', 'girder_clone':false, 'girder_update':false, 'girder_web':false, 'mongodb_version':'3.2.17'}"
+          command: |
+            pyenv exec ansible-playbook -v --inventory-file="localhost," --connection=local girder/.circleci/playbook.yml \
+                                        -e girder_virtualenv='/home/circleci/project/girder_env' \
+                                        -e girder_package="git+{{ \"$CIRCLE_REPOSITORY_URL\"|replace(':', '/')|replace('git@', 'https://') }}@$CIRCLE_BRANCH#egg=girder[sftp,mount]" \
+                                        -e girder_pip_extra_args='' \
+                                        -e girder_daemonize=false \
+                                        -e girder_web=false
           environment:
-            ANSIBLE_ROLES_PATH: girder/devops/ansible/roles:girder/devops/ansible/examples/girder-dev-environment/roles
+            ANSIBLE_ROLES_PATH: girder/devops/
       - run:
           name: Activate virtualenv
           command: echo '. /home/circleci/.virtualenvs/girder/bin/activate' >> $BASH_ENV
       - run:
           name: Install all pip modules
-          # sftp and python client aren't installed by the ansible example
-          command: pip install --upgrade --upgrade-strategy eager --editable .[sftp,mount] clients/python --requirement requirements-dev.txt
+          # python client isn't installed by the ansible example
+          command: pip install --upgrade --upgrade-strategy eager --editable clients/python --requirement requirements-dev.txt
           working_directory: girder
       - run:
           name: Create Girder build directory
@@ -298,7 +306,7 @@ jobs:
   py2_coverage:
     docker:
       - image: girder/girder_test:latest-py2
-      - image: circleci/mongo:3.2-ram
+      - image: circleci/mongo:3.4-ram
         command: ["mongod", "--storageEngine", "ephemeralForTest", "--dbpath", "/dev/shm/mongo"]
     working_directory: /home/circleci/project # as $CIRCLE_WORKING_DIRECTORY
     steps:
@@ -371,16 +379,16 @@ jobs:
           name: Install ansible
           command: pip install ansible
       - run:
-          name: Install Galaxy requirements
-          command: ansible-galaxy install --role-file=girder/devops/ansible/examples/girder-dev-environment/requirements.yml
-          environment:
-            ANSIBLE_ROLES_PATH: girder/devops/ansible/roles:girder/devops/ansible/examples/girder-dev-environment/roles
-      - run:
           name: Install Girder via ansible
-          # Use the latest mongo that Stouts supports
-          command: pyenv exec ansible-playbook --inventory-file="localhost," --connection=local girder/devops/ansible/examples/girder-dev-environment/site.yml --extra-vars="{'girder_path':'$CIRCLE_WORKING_DIRECTORY/girder', 'girder_clone':false, 'girder_update':false, 'girder_web':false, 'mongodb_version':'3.2.4'}"
+          command: |
+            pyenv exec ansible-playbook -v --inventory-file="localhost," --connection=local girder/.circleci/playbook.yml \
+                                        -e girder_virtualenv='/home/circleci/project/girder_env' \
+                                        -e girder_package="git+{{ \"$CIRCLE_REPOSITORY_URL\"|replace(':', '/')|replace('git@', 'https://') }}@$CIRCLE_BRANCH#egg=girder[sftp,mount]" \
+                                        -e girder_pip_extra_args='' \
+                                        -e girder_daemonize=false \
+                                        -e girder_web=false
           environment:
-            ANSIBLE_ROLES_PATH: girder/devops/ansible/roles:girder/devops/ansible/examples/girder-dev-environment/roles
+            ANSIBLE_ROLES_PATH: girder/devops/
       - run:
           name: Activate virtualenv
           command: echo '. /home/circleci/.virtualenvs/girder/bin/activate' >> $BASH_ENV
