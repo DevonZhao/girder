@@ -499,10 +499,6 @@ jobs:
       - run:
           name: Upload documentation to ESDoc
           command: curl 'https://doc.esdoc.org/api/create' -X POST --data-urlencode "gitUrl=git@github.com:girder/girder.git"
-      - run:
-          name: Deploy roles to Ansible Galaxy
-          command: .circleci/galaxy_deploy.sh
-          working_directory: girder
 
 workflows:
   version: 2
