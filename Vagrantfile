@@ -8,7 +8,7 @@ def true?(obj)
 end
 
 Vagrant.configure("2") do |config|
-  vagrant_box = ENV.fetch("VAGRANT_BOX", "ubuntu/trusty64")
+  vagrant_box = ENV.fetch("VAGRANT_BOX", "bento/ubuntu-18.04")
   ansible_example_name = ENV.fetch("GIRDER_EXAMPLE", "girder-dev-environment")
   is_testing = true?(ENV.fetch("ANSIBLE_TESTING", false))
   is_client_testing = true?(ENV.fetch("ANSIBLE_CLIENT_TESTING", false))
@@ -42,7 +42,8 @@ Vagrant.configure("2") do |config|
   config.vm.provision provisioner_type do |ansible|
     ansible.playbook = "devops/vagrants/vagrant-playbook.yml"
     ansible.extra_vars = {
-      bind_node_modules: bind_node_modules
+      bind_node_modules: bind_node_modules,
+      ansible_python_interpreter: "/usr/bin/python3"
     }
     if provisioner_type == "ansible_local"
       ansible.provisioning_path = "/home/vagrant/girder"
@@ -64,6 +65,10 @@ Vagrant.configure("2") do |config|
         ansible.galaxy_role_file = "devops/ansible/examples/#{ansible_example_name}/requirements.yml"
       end
     end
+    ansible.extra_vars = {
+      ansible_python_interpreter: "/usr/bin/python3"
+    }
+
 
     if provisioner_type == "ansible_local"
       ansible.provisioning_path = "/home/vagrant/girder"
